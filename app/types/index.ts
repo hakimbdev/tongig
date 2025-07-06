@@ -42,4 +42,14 @@ export interface Contract {
   escrowAddress: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserProfile {
+  address: string; // wallet address, unique
+  created_at: string;
+  displayName?: string;
+  bio?: string;
+  reputation?: number;
+  avatarUrl?: string;
+  // Add more fields as needed
 } 

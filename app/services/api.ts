@@ -1,4 +1,4 @@
-import { Job, Proposal, Contract, Transaction } from '@/types';
+import { Job, Proposal, Contract, Transaction, UserProfile } from '../types';
 
 // In-memory database for demo purposes
 let jobs: Job[] = [
@@ -27,6 +27,7 @@ let contracts: Contract[] = [];
 let nextJobId = 3;
 let nextProposalId = 1;
 let nextContractId = 1;
+let userProfiles: UserProfile[] = [];
 
 export const api = {
   async getJobs(): Promise<Job[]> {
@@ -93,5 +94,22 @@ export const api = {
     contract.status = 'completed';
     contract.updated_at = new Date().toISOString();
     return { ...contract };
+  },
+
+  createOrGetUserProfile(address: string): UserProfile {
+    let profile = userProfiles.find(u => u.address === address);
+    if (!profile) {
+      profile = {
+        address,
+        created_at: new Date().toISOString(),
+        reputation: 0,
+      };
+      userProfiles.push(profile);
+    }
+    return profile;
+  },
+
+  getUserProfile(address: string): UserProfile | undefined {
+    return userProfiles.find(u => u.address === address);
   },
 }; 

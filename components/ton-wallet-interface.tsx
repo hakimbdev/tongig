@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { formatTonAmount } from '@/lib/ton-utils';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Diamond, ExternalLink } from 'lucide-react';
+import { useTonWalletConnect } from '@/hooks/use-ton-wallet';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function TonWalletInterface() {
-  const wallet = useTonWallet();
+  const { wallet, balance, balanceLoading } = useTonWalletConnect();
   const [showTransactions, setShowTransactions] = useState(false);
 
   return (
@@ -55,6 +57,15 @@ export function TonWalletInterface() {
               <div className="font-medium break-all">
                 {wallet.account.address.slice(0, 10)}...{wallet.account.address.slice(-10)}
               </div>
+            </div>
+
+            <div className="rounded-lg border p-3 flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">Balance</div>
+              {balanceLoading ? (
+                <Skeleton className="h-6 w-20" />
+              ) : (
+                <div className="font-medium">{balance ? `${balance} TON` : '--'}</div>
+              )}
             </div>
           </div>
         )}

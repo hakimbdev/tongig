@@ -1,18 +1,20 @@
 "use client";
 
 import Link from "next/link"
-import { ArrowRight, Diamond, Shield, Wallet, Zap } from "lucide-react"
+import { ArrowRight, Shield, Wallet, Zap, Menu, Loader2, Diamond } from "lucide-react"
 import { useTonWallet, useTonConnectUI } from '@tonconnect/ui-react';
 import { useEffect, useState } from 'react';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormItem, FormLabel, FormControl, FormField, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button"
 import { WalletConnectButton } from "@/components/wallet-connect-button"
 import { useToast } from "@/components/ui/use-toast";
-import { api } from "../services/api";
+import { api } from "@/app/services/api";
 import { Job, Proposal } from "@/app/types";
 import { useTonTransaction } from "@/app/utils/ton-transaction";
 
@@ -22,70 +24,102 @@ function seededRandom(seed: number) {
   return x - Math.floor(x);
 }
 
+// Job posting schema
+const jobSchema = z.object({
+  title: z.string().min(3, "Title is required").max(100),
+  description: z.string().min(10, "Description is required").max(1000),
+  budget: z.string().min(1, "Budget is required").regex(/^\d+(\.\d{1,2})?$/, "Enter a valid amount"),
+  deadline: z.string().min(1, "Deadline is required"),
+});
+
+// Proposal schema
+const proposalSchema = z.object({
+  coverLetter: z.string().min(10, "Cover letter is required").max(1000),
+  amount: z.string().min(1, "Amount is required").regex(/^\d+(\.\d{1,2})?$/, "Enter a valid amount"),
+});
+
 export default function Home() {
   const wallet = useTonWallet();
   const [tonConnectUI] = useTonConnectUI();
   const { toast } = useToast();
   const { placeBid } = useTonTransaction();
-  // Mock job data
-  const [jobs, setJobs] = useState<Job[]>([
-    {
-      id: 1,
-      title: "Build a Telegram Bot",
-      description: "Looking for a developer to build a TON-integrated Telegram bot.",
-      budget: 50,
-      deadline: "2024-07-15",
-      client: "0:abc...123",
-      proposals: [],
-    },
-    {
-      id: 2,
-      title: "Design a TONGig Logo",
-      description: "Need a creative logo for TONGig platform.",
-      budget: 20,
-      deadline: "2024-07-10",
-      client: "0:def...456",
-      proposals: [],
-    },
-  ]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [jobsError, setJobsError] = useState<string | null>(null);
+  const [postingJob, setPostingJob] = useState(false);
+  const [postingError, setPostingError] = useState<string | null>(null);
+  const [submittingProposal, setSubmittingProposal] = useState(false);
+  const [proposalError, setProposalError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const form = useForm({ defaultValues: { title: '', description: '', budget: '', deadline: '' } });
+  const form = useForm({
+    resolver: zodResolver(jobSchema),
+    defaultValues: { title: '', description: '', budget: '', deadline: '' }
+  });
   const [proposalOpen, setProposalOpen] = useState<number | null>(null);
-  const proposalForm = useForm({ defaultValues: { coverLetter: '', amount: '' } });
+  const proposalForm = useForm({
+    resolver: zodResolver(proposalSchema),
+    defaultValues: { coverLetter: '', amount: '' }
+  });
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setJobsLoading(true);
+    setJobsError(null);
+    api.getJobs()
+      .then(setJobs)
+      .catch(() => setJobsError("Failed to load jobs. Please try again."))
+      .finally(() => setJobsLoading(false));
+  }, []);
 
   const handlePostJob = async (values: any) => {
-    await api.postJob({
-      title: values.title,
-      description: values.description,
-      budget: Number(values.budget),
-      deadline: values.deadline,
-      client: wallet?.account.address || '0:demo',
-    });
-    const updatedJobs = await api.getJobs();
-    setJobs(updatedJobs);
-    setOpen(false);
-    form.reset();
+    setPostingJob(true);
+    setPostingError(null);
+    try {
+      await api.postJob({
+        title: values.title,
+        description: values.description,
+        budget: Number(values.budget),
+        deadline: values.deadline,
+        client: wallet?.account.address || '0:demo',
+      });
+      const updatedJobs = await api.getJobs();
+      setJobs(updatedJobs);
+      setOpen(false);
+      form.reset();
+    } catch (e) {
+      setPostingError("Failed to post job. Please try again.");
+    } finally {
+      setPostingJob(false);
+    }
   };
 
   const handleSubmitProposal = async (jobId: number, values: any) => {
-    await api.submitProposal({
-      jobId,
-      freelancer: wallet?.account.address || '0:freelancer',
-      coverLetter: values.coverLetter,
-      amount: Number(values.amount),
-    });
-    setProposalOpen(null);
-    proposalForm.reset();
-    toast({ title: 'Proposal submitted', description: 'Your proposal has been sent.' });
+    setSubmittingProposal(true);
+    setProposalError(null);
+    try {
+      await api.submitProposal({
+        jobId,
+        freelancer: wallet?.account.address || '0:freelancer',
+        coverLetter: values.coverLetter,
+        amount: Number(values.amount),
+      });
+      setProposalOpen(null);
+      proposalForm.reset();
+      toast({ title: 'Proposal submitted', description: 'Your proposal has been sent.' });
+    } catch (e) {
+      setProposalError("Failed to submit proposal. Please try again.");
+    } finally {
+      setSubmittingProposal(false);
+    }
   };
   
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-6 md:gap-10">
+          <div className="flex items-center gap-4 md:gap-10">
             <Link href="/" className="flex items-center space-x-2">
-              <Diamond className="h-6 w-6" />
+              <img src="/placeholder-logo.png" alt="TONGig Logo" className="h-8 w-auto" />
               <span className="font-bold">TONGig</span>
             </Link>
             <nav className="hidden gap-6 md:flex">
@@ -98,12 +132,35 @@ export default function Home() {
               <Link href="#about" className="text-sm font-medium transition-colors hover:text-primary">
                 About
               </Link>
+              <Link href="/how-it-works" className="text-sm font-medium transition-colors hover:text-primary">
+                How It Works
+              </Link>
             </nav>
+            <button className="md:hidden ml-2 p-2 rounded focus:outline-none focus:ring-2 focus:ring-primary" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
+              <Menu className="h-6 w-6" />
+            </button>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <WalletConnectButton />
           </div>
         </div>
+        {/* Mobile nav */}
+        {mobileNavOpen && (
+          <div className="md:hidden bg-background border-t px-4 pb-4 pt-2 flex flex-col gap-2">
+            <Link href="#jobs" className="text-sm font-medium transition-colors hover:text-primary" onClick={() => setMobileNavOpen(false)}>
+              Job Board
+            </Link>
+            <Link href="#contracts" className="text-sm font-medium transition-colors hover:text-primary" onClick={() => setMobileNavOpen(false)}>
+              Active Contracts
+            </Link>
+            <Link href="#about" className="text-sm font-medium transition-colors hover:text-primary" onClick={() => setMobileNavOpen(false)}>
+              About
+            </Link>
+            <Link href="/how-it-works" className="text-sm font-medium transition-colors hover:text-primary" onClick={() => setMobileNavOpen(false)}>
+              How It Works
+            </Link>
+          </div>
+        )}
       </header>
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
@@ -184,49 +241,60 @@ export default function Home() {
               </div>
             </div>
             <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
-              {jobs.map((job) => (
-                <div key={job.id} className="rounded-lg border bg-background p-6 shadow-sm flex flex-col gap-2">
-                  <h3 className="text-xl font-semibold">{job.title}</h3>
-                  <p className="text-muted-foreground">{job.description}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-primary font-bold">{job.budget} TON</span>
-                    <span className="text-xs text-muted-foreground">Deadline: {job.deadline}</span>
+              {jobsLoading ? (
+                <div className="col-span-full flex justify-center items-center py-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+              ) : jobsError ? (
+                <div className="col-span-full text-center text-destructive py-12">{jobsError}</div>
+              ) : jobs.length === 0 ? (
+                <div className="col-span-full text-center py-12">No jobs found.</div>
+              ) : (
+                jobs.map((job) => (
+                  <div key={job.id} className="rounded-lg border bg-background p-6 shadow-sm flex flex-col gap-2">
+                    <h3 className="text-xl font-semibold">{job.title}</h3>
+                    <p className="text-muted-foreground">{job.description}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-primary font-bold">{job.budget} TON</span>
+                      <span className="text-xs text-muted-foreground">Deadline: {job.deadline}</span>
+                    </div>
+                    <Button size="sm" className="mt-2" onClick={() => setProposalOpen(job.id)}>Apply</Button>
+                    <Dialog open={proposalOpen === job.id} onOpenChange={open => setProposalOpen(open ? job.id : null)}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Submit Proposal</DialogTitle>
+                        </DialogHeader>
+                        <Form {...proposalForm}>
+                          <form onSubmit={proposalForm.handleSubmit((values) => handleSubmitProposal(job.id, values))} className="space-y-4">
+                            <FormField name="coverLetter" control={proposalForm.control} render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Cover Letter</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Describe your approach and experience" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField name="amount" control={proposalForm.control} render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Amount (TON)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" placeholder="Your offer in Toncoin" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            {proposalError && <div className="text-destructive text-sm mb-2">{proposalError}</div>}
+                            <DialogFooter>
+                              <Button type="submit" disabled={submittingProposal}>
+                                {submittingProposal ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null} Submit Proposal
+                              </Button>
+                            </DialogFooter>
+                          </form>
+                        </Form>
+                      </DialogContent>
+                    </Dialog>
                   </div>
-                  <Button size="sm" className="mt-2" onClick={() => setProposalOpen(job.id)}>Apply</Button>
-                  <Dialog open={proposalOpen === job.id} onOpenChange={open => setProposalOpen(open ? job.id : null)}>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Submit Proposal</DialogTitle>
-                      </DialogHeader>
-                      <Form {...proposalForm}>
-                        <form onSubmit={proposalForm.handleSubmit((values) => handleSubmitProposal(job.id, values))} className="space-y-4">
-                          <FormField name="coverLetter" control={proposalForm.control} render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Cover Letter</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Describe your approach and experience" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <FormField name="amount" control={proposalForm.control} render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Amount (TON)</FormLabel>
-                              <FormControl>
-                                <Input type="number" placeholder="Your offer in Toncoin" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          <DialogFooter>
-                            <Button type="submit">Submit Proposal</Button>
-                          </DialogFooter>
-                        </form>
-                      </Form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -373,8 +441,11 @@ export default function Home() {
                   <FormMessage />
                 </FormItem>
               )} />
+              {postingError && <div className="text-destructive text-sm mb-2">{postingError}</div>}
               <DialogFooter>
-                <Button type="submit">Post Job</Button>
+                <Button type="submit" disabled={postingJob}>
+                  {postingJob ? <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> : null} Post Job
+                </Button>
               </DialogFooter>
             </form>
           </Form>
