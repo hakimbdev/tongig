@@ -98,16 +98,9 @@ export default function Home() {
               <Link href="#about" className="text-sm font-medium transition-colors hover:text-primary">
                 About
               </Link>
-              <Link href="/wallet" className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1">
-                <Wallet className="h-4 w-4" />
-                Wallet Demo
-              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/admin" className="text-sm font-medium transition-colors hover:text-primary">
-              Admin
-            </Link>
             <WalletConnectButton />
           </div>
         </div>
@@ -144,6 +137,38 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-background">
+          <div className="container px-4 md:px-6">
+            <h2 className="text-3xl font-bold text-center mb-8">How It Works</h2>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-8 text-center">
+              <div>
+                <div className="flex items-center justify-center mb-2"><Wallet className="h-10 w-10 text-primary" /></div>
+                <div className="font-semibold">Connect Wallet</div>
+                <div className="text-muted-foreground text-sm">Login with TON Connect</div>
+              </div>
+              <div>
+                <div className="flex items-center justify-center mb-2"><ArrowRight className="h-10 w-10 text-primary" /></div>
+                <div className="font-semibold">Post/Find a Job</div>
+                <div className="text-muted-foreground text-sm">Clients post, freelancers browse</div>
+              </div>
+              <div>
+                <div className="flex items-center justify-center mb-2"><Diamond className="h-10 w-10 text-primary" /></div>
+                <div className="font-semibold">Submit Proposal</div>
+                <div className="text-muted-foreground text-sm">Freelancers apply with offers</div>
+              </div>
+              <div>
+                <div className="flex items-center justify-center mb-2"><Shield className="h-10 w-10 text-primary" /></div>
+                <div className="font-semibold">Escrow & Work</div>
+                <div className="text-muted-foreground text-sm">Toncoin held until job is done</div>
+              </div>
+              <div>
+                <div className="flex items-center justify-center mb-2"><Zap className="h-10 w-10 text-primary" /></div>
+                <div className="font-semibold">Approve & Get Paid</div>
+                <div className="text-muted-foreground text-sm">Funds released on approval</div>
               </div>
             </div>
           </div>
@@ -246,6 +271,43 @@ export default function Home() {
             </div>
           </div>
         </section>
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted/50">
+          <div className="container px-4 md:px-6">
+            <h2 className="text-3xl font-bold text-center mb-8">Why Choose TONGig?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="p-6 bg-background rounded-lg shadow-sm text-center">
+                <Diamond className="h-8 w-8 mx-auto text-primary mb-2" />
+                <div className="font-semibold mb-1">On-chain Escrow</div>
+                <div className="text-muted-foreground text-sm">Secure payments, no middlemen</div>
+              </div>
+              <div className="p-6 bg-background rounded-lg shadow-sm text-center">
+                <Shield className="h-8 w-8 mx-auto text-primary mb-2" />
+                <div className="font-semibold mb-1">NFT/SBT Reputation</div>
+                <div className="text-muted-foreground text-sm">Earn badges for completed jobs</div>
+              </div>
+              <div className="p-6 bg-background rounded-lg shadow-sm text-center">
+                <Wallet className="h-8 w-8 mx-auto text-primary mb-2" />
+                <div className="font-semibold mb-1">Instant Wallet Login</div>
+                <div className="text-muted-foreground text-sm">No email, just TON Connect</div>
+              </div>
+              <div className="p-6 bg-background rounded-lg shadow-sm text-center">
+                <Zap className="h-8 w-8 mx-auto text-primary mb-2" />
+                <div className="font-semibold mb-1">Telegram Mini App</div>
+                <div className="text-muted-foreground text-sm">Works inside Telegram</div>
+              </div>
+              <div className="p-6 bg-background rounded-lg shadow-sm text-center">
+                <ArrowRight className="h-8 w-8 mx-auto text-primary mb-2" />
+                <div className="font-semibold mb-1">Global Talent</div>
+                <div className="text-muted-foreground text-sm">Hire or work from anywhere</div>
+              </div>
+              <div className="p-6 bg-background rounded-lg shadow-sm text-center">
+                <Diamond className="h-8 w-8 mx-auto text-primary mb-2" />
+                <div className="font-semibold mb-1">Transparent Contracts</div>
+                <div className="text-muted-foreground text-sm">Everything on-chain, always visible</div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
       <footer className="w-full border-t bg-background py-6">
         <div className="container px-4 md:px-6">
@@ -255,14 +317,11 @@ export default function Home() {
               <span className="font-semibold">TONGig</span>
             </div>
             <nav className="flex gap-4 sm:gap-6">
-              <Link href="#" className="text-sm font-medium hover:underline">
+              <Link href="/terms" className="text-sm font-medium hover:underline">
                 Terms
               </Link>
-              <Link href="#" className="text-sm font-medium hover:underline">
+              <Link href="/privacy" className="text-sm font-medium hover:underline">
                 Privacy
-              </Link>
-              <Link href="#" className="text-sm font-medium hover:underline">
-                Contact
               </Link>
             </nav>
             <div className="text-sm text-muted-foreground">
