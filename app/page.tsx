@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/app/services/api";
 import { Job, Proposal } from "@/app/types";
 import { useTonTransaction } from "@/app/utils/ton-transaction";
+import { Navbar } from "@/components/Navbar";
 
 // Simple seeded random number generator
 function seededRandom(seed: number) {
@@ -115,53 +116,7 @@ export default function Home() {
   
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-4 md:gap-10">
-            <Link href="/" className="flex items-center space-x-2">
-              <img src="/placeholder-logo.png" alt="TONGig Logo" className="h-8 w-auto" />
-              <span className="font-bold">TONGig</span>
-            </Link>
-            <nav className="hidden gap-6 md:flex">
-              <Link href="#jobs" className="text-sm font-medium transition-colors hover:text-primary">
-                Job Board
-              </Link>
-              <Link href="#contracts" className="text-sm font-medium transition-colors hover:text-primary">
-                Active Contracts
-              </Link>
-              <Link href="#about" className="text-sm font-medium transition-colors hover:text-primary">
-                About
-              </Link>
-              <Link href="/how-it-works" className="text-sm font-medium transition-colors hover:text-primary">
-                How It Works
-              </Link>
-            </nav>
-            <button className="md:hidden ml-2 p-2 rounded focus:outline-none focus:ring-2 focus:ring-primary" onClick={() => setMobileNavOpen(!mobileNavOpen)}>
-              <Menu className="h-6 w-6" />
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            <WalletConnectButton />
-          </div>
-        </div>
-        {/* Mobile nav */}
-        {mobileNavOpen && (
-          <div className="md:hidden bg-background border-t px-4 pb-4 pt-2 flex flex-col gap-2">
-            <Link href="#jobs" className="text-sm font-medium transition-colors hover:text-primary" onClick={() => setMobileNavOpen(false)}>
-              Job Board
-            </Link>
-            <Link href="#contracts" className="text-sm font-medium transition-colors hover:text-primary" onClick={() => setMobileNavOpen(false)}>
-              Active Contracts
-            </Link>
-            <Link href="#about" className="text-sm font-medium transition-colors hover:text-primary" onClick={() => setMobileNavOpen(false)}>
-              About
-            </Link>
-            <Link href="/how-it-works" className="text-sm font-medium transition-colors hover:text-primary" onClick={() => setMobileNavOpen(false)}>
-              How It Works
-            </Link>
-          </div>
-        )}
-      </header>
+      <Navbar />
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
           <div className="container px-4 md:px-6">
