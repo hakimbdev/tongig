@@ -1,0 +1,327 @@
+"use client";
+
+import Link from "next/link"
+import { ArrowRight, Diamond, Shield, Wallet, Zap } from "lucide-react"
+import { useTonWallet, useTonConnectUI } from '@tonconnect/ui-react';
+import { useEffect, useState } from 'react';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormItem, FormLabel, FormControl, FormField, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+
+import { Button } from "@/components/ui/button"
+import { WalletConnectButton } from "@/components/wallet-connect-button"
+import { useToast } from "@/components/ui/use-toast";
+import { api } from "../services/api";
+import { Job, Proposal } from "@/app/types";
+import { useTonTransaction } from "@/app/utils/ton-transaction";
+
+// Simple seeded random number generator
+function seededRandom(seed: number) {
+  const x = Math.sin(seed++) * 10000;
+  return x - Math.floor(x);
+}
+
+export default function Home() {
+  const wallet = useTonWallet();
+  const [tonConnectUI] = useTonConnectUI();
+  const { toast } = useToast();
+  const { placeBid } = useTonTransaction();
+  // Mock job data
+  const [jobs, setJobs] = useState<Job[]>([
+    {
+      id: 1,
+      title: "Build a Telegram Bot",
+      description: "Looking for a developer to build a TON-integrated Telegram bot.",
+      budget: 50,
+      deadline: "2024-07-15",
+      client: "0:abc...123",
+      proposals: [],
+    },
+    {
+      id: 2,
+      title: "Design a TONGig Logo",
+      description: "Need a creative logo for TONGig platform.",
+      budget: 20,
+      deadline: "2024-07-10",
+      client: "0:def...456",
+      proposals: [],
+    },
+  ]);
+  const [open, setOpen] = useState(false);
+  const form = useForm({ defaultValues: { title: '', description: '', budget: '', deadline: '' } });
+  const [proposalOpen, setProposalOpen] = useState<number | null>(null);
+  const proposalForm = useForm({ defaultValues: { coverLetter: '', amount: '' } });
+
+  const handlePostJob = async (values: any) => {
+    await api.postJob({
+      title: values.title,
+      description: values.description,
+      budget: Number(values.budget),
+      deadline: values.deadline,
+      client: wallet?.account.address || '0:demo',
+    });
+    const updatedJobs = await api.getJobs();
+    setJobs(updatedJobs);
+    setOpen(false);
+    form.reset();
+  };
+
+  const handleSubmitProposal = async (jobId: number, values: any) => {
+    await api.submitProposal({
+      jobId,
+      freelancer: wallet?.account.address || '0:freelancer',
+      coverLetter: values.coverLetter,
+      amount: Number(values.amount),
+    });
+    setProposalOpen(null);
+    proposalForm.reset();
+    toast({ title: 'Proposal submitted', description: 'Your proposal has been sent.' });
+  };
+  
+  return (
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center gap-6 md:gap-10">
+            <Link href="/" className="flex items-center space-x-2">
+              <Diamond className="h-6 w-6" />
+              <span className="font-bold">TONGig</span>
+            </Link>
+            <nav className="hidden gap-6 md:flex">
+              <Link href="#jobs" className="text-sm font-medium transition-colors hover:text-primary">
+                Job Board
+              </Link>
+              <Link href="#contracts" className="text-sm font-medium transition-colors hover:text-primary">
+                Active Contracts
+              </Link>
+              <Link href="#about" className="text-sm font-medium transition-colors hover:text-primary">
+                About
+              </Link>
+              <Link href="/wallet" className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1">
+                <Wallet className="h-4 w-4" />
+                Wallet Demo
+              </Link>
+            </nav>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/admin" className="text-sm font-medium transition-colors hover:text-primary">
+              Admin
+            </Link>
+            <WalletConnectButton />
+          </div>
+        </div>
+      </header>
+      <main className="flex-1">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
+          <div className="container px-4 md:px-6">
+            <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
+              <div className="flex flex-col justify-center space-y-4">
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
+                    Empowering Freelancers & Clients on TON
+                  </h1>
+                  <p className="max-w-[600px] text-muted-foreground md:text-xl">
+                    TONGig is the decentralized freelance marketplace for the TON blockchain. Post jobs, hire global talent, and manage contracts with on-chain escrow and reputation.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                  <Button size="lg">
+                    Browse Jobs
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button size="lg" variant="outline" onClick={() => setOpen(true)}>
+                    Post a Job
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center justify-center">
+                <div className="relative h-[450px] w-[450px] rounded-full bg-gradient-to-r from-primary/20 to-primary p-1">
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background p-6">
+                    <div className="space-y-2 text-center">
+                      <div className="text-4xl font-bold">100+</div>
+                      <div className="text-sm text-muted-foreground">Active Freelance Gigs</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section id="jobs" className="w-full py-12 md:py-24 lg:py-32 bg-muted/50">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Latest Gigs</h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Browse open freelance jobs and submit proposals. All payments are secured by Toncoin escrow smart contracts.
+                </p>
+              </div>
+            </div>
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
+              {jobs.map((job) => (
+                <div key={job.id} className="rounded-lg border bg-background p-6 shadow-sm flex flex-col gap-2">
+                  <h3 className="text-xl font-semibold">{job.title}</h3>
+                  <p className="text-muted-foreground">{job.description}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-primary font-bold">{job.budget} TON</span>
+                    <span className="text-xs text-muted-foreground">Deadline: {job.deadline}</span>
+                  </div>
+                  <Button size="sm" className="mt-2" onClick={() => setProposalOpen(job.id)}>Apply</Button>
+                  <Dialog open={proposalOpen === job.id} onOpenChange={open => setProposalOpen(open ? job.id : null)}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Submit Proposal</DialogTitle>
+                      </DialogHeader>
+                      <Form {...proposalForm}>
+                        <form onSubmit={proposalForm.handleSubmit((values) => handleSubmitProposal(job.id, values))} className="space-y-4">
+                          <FormField name="coverLetter" control={proposalForm.control} render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cover Letter</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Describe your approach and experience" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField name="amount" control={proposalForm.control} render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Amount (TON)</FormLabel>
+                              <FormControl>
+                                <Input type="number" placeholder="Your offer in Toncoin" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <DialogFooter>
+                            <Button type="submit">Submit Proposal</Button>
+                          </DialogFooter>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section id="contracts" className="w-full py-12 md:py-24 lg:py-32 bg-muted/50">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Your Contracts</h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  Track and manage your active and completed freelance contracts. Funds are released only when work is approved.
+                </p>
+              </div>
+            </div>
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
+              {/* No asset/auction UI sections, only job/proposal/contract UI */}
+            </div>
+            <div className="flex justify-center">
+              <Button variant="outline" size="lg">
+                View All Contracts
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </section>
+        <section id="about" className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Why TONGig?</h2>
+                <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                  The decentralized freelance platform for the TON blockchain economy
+                </p>
+              </div>
+              <div className="mx-auto max-w-3xl text-center">
+                <p className="mb-4">
+                  TONGig connects clients and freelancers worldwide, enabling trustless collaboration with Toncoin payments, on-chain escrow, and NFT-based reputation. No middlemen, no borders—just pure talent and opportunity.
+                </p>
+                <p>
+                  Join the future of work: instant wallet login, transparent contracts, and blockchain-powered reviews. All inside Telegram.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className="w-full border-t bg-background py-6">
+        <div className="container px-4 md:px-6">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <div className="flex items-center gap-2">
+              <Diamond className="h-5 w-5" />
+              <span className="font-semibold">TONGig</span>
+            </div>
+            <nav className="flex gap-4 sm:gap-6">
+              <Link href="#" className="text-sm font-medium hover:underline">
+                Terms
+              </Link>
+              <Link href="#" className="text-sm font-medium hover:underline">
+                Privacy
+              </Link>
+              <Link href="#" className="text-sm font-medium hover:underline">
+                Contact
+              </Link>
+            </nav>
+            <div className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} TONGig. All rights reserved.
+            </div>
+          </div>
+        </div>
+      </footer>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Post a New Job</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handlePostJob)} className="space-y-4">
+              <FormField name="title" control={form.control} render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Job title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField name="description" control={form.control} render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Describe the job" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField name="budget" control={form.control} render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Budget (TON)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="Budget in Toncoin" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField name="deadline" control={form.control} render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Deadline</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <DialogFooter>
+                <Button type="submit">Post Job</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
