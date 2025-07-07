@@ -20,6 +20,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="https://res.cloudinary.com/da8ptobvx/image/upload/v1751806907/Untitled_design__3_-removebg-preview_hia7sj.png" type="image/png" />
+      </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <TonWalletProvider>
